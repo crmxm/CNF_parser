@@ -1,0 +1,247 @@
+#include <iostream>
+#include <stack>
+
+#include "Stmt.h"
+
+void FuncStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << funcName << '(';
+
+	for (auto name : args)
+		os << name << ',';
+
+	os << ')' << std::endl;
+}
+
+void ImpStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "Implication" << std::endl;
+
+	left->print(os, depth + 1);
+	right->print(os, depth + 1);
+}
+
+void OrStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "Or" << std::endl;
+
+	left->print(os, depth + 1);
+	right->print(os, depth + 1);
+}
+
+void AndStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "And" << std::endl;
+
+	left->print(os, depth + 1);
+	right->print(os, depth + 1);
+}
+
+void NotStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "Not" << std::endl;
+
+	stmt->print(os, depth + 1);
+}
+
+void OrMulStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "Or" << std::endl;
+
+	for (auto stmt : stmts)
+		stmt->print(os, depth + 1);
+}
+
+void AndMulStmt::print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << "And" << std::endl;
+
+	for (auto stmt : stmts)
+		stmt->print(os, depth + 1);
+}
+
+FuncStmt * ReadFunc(const char * in, int & index)
+{
+	int begin = index;
+	while (in[index++] != '(');
+
+	std::string name = std::string(in + begin, index - begin - 1);
+
+	std::vector<std::string> val;
+
+	while (true)
+	{
+		char c = '\0';
+		begin = index;
+
+		while ((c = in[index++]) != ',' && c != ')');
+
+		val.push_back(std::string(in + begin, index - begin - 1));
+		if (c == ')')
+			break;
+	}
+	
+	return new FuncStmt(name, val);
+}
+
+Statement * Parser(const char * in, int & index)
+{
+	enum ParserPhase
+	{
+		IMP,
+		IMP_REST,
+		OR,
+		OR_REST,
+		AND,
+		AND_REST,
+		NOT,
+		FUNC,
+	};
+	std::stack<ParserPhase> sPhase;
+
+	Statement * resI;
+	Statement * resO;
+	Statement * resA;
+	Statement * resN;
+	bool isNeg = false;
+	resI = resO = resA = resN = nullptr;
+
+	sPhase.push(ParserPhase::IMP);
+
+	while (!sPhase.empty())
+	{
+		char cTemp = in[index];
+		ParserPhase currPhase = sPhase.top();
+		sPhase.pop();
+
+		switch (currPhase)
+		{
+		case IMP:
+			sPhase.push(ParserPhase::IMP_REST);
+			sPhase.push(ParserPhase::OR);
+
+			resI = nullptr;
+
+			break;
+		case OR:
+			sPhase.push(ParserPhase::OR_REST);
+			sPhase.push(ParserPhase::AND);
+
+			resO = nullptr;
+
+			break;
+		case AND:
+			sPhase.push(ParserPhase::AND_REST);
+			sPhase.push(ParserPhase::NOT);
+
+			resA = nullptr;
+
+			break;
+		case NOT:
+			sPhase.push(ParserPhase::FUNC);
+
+			if (cTemp == '~')
+			{
+				isNeg = true;
+				index++;
+			}
+			resN = nullptr;
+
+			break;
+		case FUNC:
+			Statement * sTemp;
+
+			if (cTemp == '(')
+				sTemp = Parser(in, ++index);
+			else
+				sTemp = ReadFunc(in, index);
+
+			if (isNeg)
+				resN = new NotStmt(sTemp);
+			else
+				resN = sTemp;
+
+			break;
+		case IMP_REST:
+			if (cTemp != '=')
+			{
+				if (!resI)
+					resI = resO;
+				else
+					((ImpStmt *)resI)->right = resO;
+
+				if (cTemp == ')')
+					index++;
+
+				break;
+			}
+
+			index += 2;
+
+			sPhase.push(ParserPhase::IMP_REST);
+			sPhase.push(ParserPhase::OR);
+
+			if (!resI)
+				resI = new ImpStmt(resO);
+			else
+			{
+				((ImpStmt *)resI)->right = resO;
+				resI = new ImpStmt(resI);
+			}
+
+			break;
+		case OR_REST:
+			if (cTemp != '|')
+			{
+				if (!resO)
+					resO = resA;
+				else
+					((OrStmt *)resO)->right = resA;
+
+				break;
+			}
+
+			index++;
+
+			sPhase.push(ParserPhase::OR_REST);
+			sPhase.push(ParserPhase::AND);
+
+			if (!resO)
+				resO = new OrStmt(resA);
+			else
+			{
+				((OrStmt *)resO)->right = resA;
+				resO = new OrStmt(resO);
+			}
+
+			break;
+		case AND_REST:
+			if (cTemp != '&')
+			{
+				if (!resA)
+					resA = resN;
+				else
+					((AndStmt *)resA)->right = resN;
+
+				break;
+			}
+
+			index++;
+
+			sPhase.push(ParserPhase::AND_REST);
+			sPhase.push(ParserPhase::NOT);
+
+			if (!resA)
+				resA = new AndStmt(resN);
+			else
+			{
+				((AndStmt *)resA)->right = resN;
+				resA = new AndStmt(resA);
+			}
+
+			break;
+		}
+	}
+
+	return resI;
+}
