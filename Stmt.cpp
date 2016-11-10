@@ -3,7 +3,9 @@
 
 #include "Stmt.h"
 
-void FuncStmt::print(std::ostream & os, int depth)
+#define CONVERT(type, pointer) ((type *) pointer)
+
+void FuncStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << funcName << '(';
 
@@ -13,51 +15,51 @@ void FuncStmt::print(std::ostream & os, int depth)
 	os << ')' << std::endl;
 }
 
-void ImpStmt::print(std::ostream & os, int depth)
+void ImpStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "Implication" << std::endl;
 
-	left->print(os, depth + 1);
-	right->print(os, depth + 1);
+	left->Print(os, depth + 1);
+	right->Print(os, depth + 1);
 }
 
-void OrStmt::print(std::ostream & os, int depth)
+void OrStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "Or" << std::endl;
 
-	left->print(os, depth + 1);
-	right->print(os, depth + 1);
+	left->Print(os, depth + 1);
+	right->Print(os, depth + 1);
 }
 
-void AndStmt::print(std::ostream & os, int depth)
+void AndStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "And" << std::endl;
 
-	left->print(os, depth + 1);
-	right->print(os, depth + 1);
+	left->Print(os, depth + 1);
+	right->Print(os, depth + 1);
 }
 
-void NotStmt::print(std::ostream & os, int depth)
+void NotStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "Not" << std::endl;
 
-	stmt->print(os, depth + 1);
+	stmt->Print(os, depth + 1);
 }
 
-void OrMulStmt::print(std::ostream & os, int depth)
+void OrMulStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "Or" << std::endl;
 
 	for (auto stmt : stmts)
-		stmt->print(os, depth + 1);
+		stmt->Print(os, depth + 1);
 }
 
-void AndMulStmt::print(std::ostream & os, int depth)
+void AndMulStmt::Print(std::ostream & os, int depth)
 {
 	os << std::string(depth, '|') << "And" << std::endl;
 
 	for (auto stmt : stmts)
-		stmt->print(os, depth + 1);
+		stmt->Print(os, depth + 1);
 }
 
 FuncStmt * ReadFunc(const char * in, int & index)
@@ -197,7 +199,6 @@ Statement * Parser(const char * in, int & index)
 					resO = resA;
 				else
 					((OrStmt *)resO)->right = resA;
-
 				break;
 			}
 
@@ -245,3 +246,5 @@ Statement * Parser(const char * in, int & index)
 
 	return resI;
 }
+
+#undef CONVERT(type, pointer)

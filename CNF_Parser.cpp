@@ -4,8 +4,6 @@
 
 int main()
 {
-	std::cout << "All the leaves are brown" << std::endl;
-
 	char buff[1024];
 
 	int size = 1024;
@@ -16,7 +14,7 @@ int main()
 
 	Statement * res = Parser(buff, offset);
 
-	res->print(std::cout, 0);
+	res->Print(std::cout, 0);
 
 	return 0;
 }

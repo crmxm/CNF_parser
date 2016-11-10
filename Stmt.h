@@ -23,7 +23,7 @@ public:
 
 	Statement(StatementType s) : sType(s) {};
 
-	virtual void print(std::ostream &, int) = 0;
+	virtual void Print(std::ostream &, int) = 0;
 };
 
 class FuncStmt : public Statement
@@ -35,7 +35,7 @@ public:
 	FuncStmt() : Statement(StatementType::FUNC) {};
 	FuncStmt(std::string name, std::vector<std::string> val) : Statement(StatementType::FUNC), funcName(name), args(val) {};
 	
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class ImpStmt : public Statement
@@ -47,7 +47,7 @@ public:
 	ImpStmt() : Statement(StatementType::IMPLICATION), left(nullptr), right(nullptr) {};
 	ImpStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::IMPLICATION), left(l), right(r) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class OrStmt : public Statement
@@ -59,7 +59,7 @@ public:
 	OrStmt() : Statement(StatementType::OR), left(nullptr), right(nullptr) {};
 	OrStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::OR), left(l), right(r) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class AndStmt : public Statement
@@ -71,7 +71,7 @@ public:
 	AndStmt() : Statement(StatementType::OR), left(nullptr), right(nullptr) {};
 	AndStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::AND), left(l), right(r) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class NotStmt : public Statement
@@ -82,7 +82,7 @@ public:
 	NotStmt() : Statement(StatementType::NOT), stmt(nullptr) {};
 	NotStmt(Statement * n) : Statement(StatementType::NOT), stmt(n) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class OrMulStmt : public Statement
@@ -93,7 +93,7 @@ public:
 	OrMulStmt() : Statement(StatementType::OR_MUL) {};
 	OrMulStmt(std::vector<Statement *> val) : Statement(StatementType::OR_MUL), stmts(val) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
 };
 
 class AndMulStmt : public Statement
@@ -104,7 +104,16 @@ public:
 	AndMulStmt() : Statement(StatementType::AND_MUL) {};
 	AndMulStmt(std::vector<Statement *> val) : Statement(StatementType::AND_MUL), stmts(val) {};
 
-	void print(std::ostream &, int);
+	void Print(std::ostream &, int);
+};
+
+class CNF
+{
+private:
+	Statement * stmt;
+
+public:
+	CNF() {};
 };
 
 FuncStmt * ReadFunc(const char *, int &);
