@@ -12,9 +12,25 @@ int main()
 
 	int offset = 0;
 
-	Statement * res = Parser(buff, offset);
+	LogicTree * pLT = new LogicTree(buff);
+	pLT->Print(std::cout);
 
-	res->Print(std::cout, 0);
+	std::cout << "Reduce Imp...Done." << std::endl;
+
+	pLT->ReduceImp();
+	pLT->Print(std::cout);
+
+	std::cout << "Distribute Not...Done." << std::endl;
+
+	pLT->DistributeNot();
+	pLT->Print(std::cout);
+
+	std::cout << "Compress Tree...Done." << std::endl;
+
+	pLT->CompressTree();
+	pLT->Print(std::cout);
+
+	delete pLT;
 
 	return 0;
 }

@@ -21,9 +21,16 @@ public:
 
 	StatementType sType;
 
-	Statement(StatementType s) : sType(s) {};
+	std::vector<Statement *> childs;
 
-	virtual void Print(std::ostream &, int) = 0;
+	Statement(StatementType s) : sType(s) {};
+	Statement(StatementType s, int n) : sType(s) { childs.reserve(n); };
+	Statement(StatementType s, const std::vector<Statement*> & val) : sType(s), childs(val) {};
+	virtual ~Statement() {};
+
+	virtual void Print(std::ostream &, int);
+
+	void AddChild(Statement * pS) { childs.push_back(pS); };
 };
 
 class FuncStmt : public Statement
@@ -32,8 +39,8 @@ public:
 	std::string funcName;
 	std::vector<std::string> args;
 
-	FuncStmt() : Statement(StatementType::FUNC) {};
-	FuncStmt(std::string name, std::vector<std::string> val) : Statement(StatementType::FUNC), funcName(name), args(val) {};
+	FuncStmt() : Statement(StatementType::FUNC, 0) {};
+	FuncStmt(std::string name, std::vector<std::string> val) : Statement(StatementType::FUNC, 0), funcName(name), args(val) {};
 	
 	void Print(std::ostream &, int);
 };
@@ -41,74 +48,54 @@ public:
 class ImpStmt : public Statement
 {
 public:
-	Statement * left;
-	Statement * right;
+	ImpStmt() : Statement(StatementType::IMPLICATION, 2) {};
+	ImpStmt(Statement * l) : Statement(StatementType::IMPLICATION, 2) { AddChild(l); };
+	ImpStmt(Statement * l, Statement * r) : Statement(StatementType::IMPLICATION, 2) { AddChild(l); AddChild(r); };
 
-	ImpStmt() : Statement(StatementType::IMPLICATION), left(nullptr), right(nullptr) {};
-	ImpStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::IMPLICATION), left(l), right(r) {};
-
-	void Print(std::ostream &, int);
 };
 
 class OrStmt : public Statement
 {
 public:
-	Statement * left;
-	Statement * right;
+	OrStmt() : Statement(StatementType::OR, 2) {};
+	OrStmt(Statement * l) : Statement(StatementType::OR, 2) { AddChild(l); };
+	OrStmt(Statement * l, Statement * r) : Statement(Statement::OR, 2) { AddChild(l); AddChild(r); };
 
-	OrStmt() : Statement(StatementType::OR), left(nullptr), right(nullptr) {};
-	OrStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::OR), left(l), right(r) {};
-
-	void Print(std::ostream &, int);
 };
 
 class AndStmt : public Statement
 {
 public:
-	Statement * left;
-	Statement * right;
+	AndStmt() : Statement(StatementType::AND, 2) {};
+	AndStmt(Statement * l) : Statement(StatementType::AND, 2) { AddChild(l); };
+	AndStmt(Statement * l, Statement * r) : Statement(StatementType::AND, 2) { AddChild(l); AddChild(r); };
 
-	AndStmt() : Statement(StatementType::OR), left(nullptr), right(nullptr) {};
-	AndStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::AND), left(l), right(r) {};
-
-	void Print(std::ostream &, int);
 };
 
 class NotStmt : public Statement
 {
 public:
-	Statement * stmt;
+	NotStmt() : Statement(StatementType::NOT, 1) {};
+	NotStmt(Statement * n) : Statement(StatementType::NOT, 1) { AddChild(n); };
 
-	NotStmt() : Statement(StatementType::NOT), stmt(nullptr) {};
-	NotStmt(Statement * n) : Statement(StatementType::NOT), stmt(n) {};
-
-	void Print(std::ostream &, int);
 };
 
 class OrMulStmt : public Statement
 {
 public:
-	std::vector<Statement *> stmts;
-
 	OrMulStmt() : Statement(StatementType::OR_MUL) {};
-	OrMulStmt(std::vector<Statement *> val) : Statement(StatementType::OR_MUL), stmts(val) {};
+	OrMulStmt(const std::vector<Statement *> & val) : Statement(StatementType::OR_MUL, val) {};
 
-	void Print(std::ostream &, int);
 };
 
 class AndMulStmt : public Statement
 {
 public:
-	std::vector<Statement *> stmts;
-
 	AndMulStmt() : Statement(StatementType::AND_MUL) {};
-	AndMulStmt(std::vector<Statement *> val) : Statement(StatementType::AND_MUL), stmts(val) {};
+	AndMulStmt(const std::vector<Statement *> & val) : Statement(StatementType::AND_MUL, val) {};
 
-	void Print(std::ostream &, int);
 };
 
-FuncStmt * ReadFunc(const char *, int &);
-Statement * Parser(const char *, int &);
 Statement * Compress(Statement *);
 Statement * RmImp(Statement *);
 Statement * ReduceNot(Statement *);
@@ -118,11 +105,23 @@ class LogicTree
 private:
 	Statement * stmt;
 
+	Statement * Parser(const char *, int &);
+	void ReleaseAll(Statement *);
+	Statement * ReduceImp(Statement *);
+	Statement * DistributeNot(Statement *, bool);
+	Statement * CompressTree(Statement *);
+
 public:
 	LogicTree() : stmt(nullptr) {};
 	LogicTree(const char * in) { int index = 0; stmt = Parser(in, index); };
+	LogicTree(const LogicTree &) = delete;
+	LogicTree & operator = (const LogicTree &) = delete;
+	~LogicTree() { ReleaseAll(stmt); };
 
 	void Print(std::ostream & os) { stmt->Print(os, 0); };
+	void ReduceImp() { stmt = ReduceImp(stmt); };
+	void DistributeNot() { stmt = DistributeNot(stmt, false); };
+	void CompressTree() { stmt = CompressTree(stmt); };
 };
 
 #endif // !__STMT_H__

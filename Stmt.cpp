@@ -3,7 +3,15 @@
 
 #include "Stmt.h"
 
-#define CONVERT(type, pointer) ((type *) pointer)
+const char StatementTypeName[7][4] = { "", "Imp", "Or", "And", "Not", "Or", "And" };
+
+void Statement::Print(std::ostream & os, int depth)
+{
+	os << std::string(depth, '|') << StatementTypeName[sType] << std::endl;
+
+	for (auto stmt : childs)
+		stmt->Print(os, depth + 1);
+}
 
 void FuncStmt::Print(std::ostream & os, int depth)
 {
@@ -13,53 +21,6 @@ void FuncStmt::Print(std::ostream & os, int depth)
 		os << name << ',';
 
 	os << ')' << std::endl;
-}
-
-void ImpStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "Implication" << std::endl;
-
-	left->Print(os, depth + 1);
-	right->Print(os, depth + 1);
-}
-
-void OrStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "Or" << std::endl;
-
-	left->Print(os, depth + 1);
-	right->Print(os, depth + 1);
-}
-
-void AndStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "And" << std::endl;
-
-	left->Print(os, depth + 1);
-	right->Print(os, depth + 1);
-}
-
-void NotStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "Not" << std::endl;
-
-	stmt->Print(os, depth + 1);
-}
-
-void OrMulStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "Or" << std::endl;
-
-	for (auto stmt : stmts)
-		stmt->Print(os, depth + 1);
-}
-
-void AndMulStmt::Print(std::ostream & os, int depth)
-{
-	os << std::string(depth, '|') << "And" << std::endl;
-
-	for (auto stmt : stmts)
-		stmt->Print(os, depth + 1);
 }
 
 FuncStmt * ReadFunc(const char * in, int & index)
@@ -86,7 +47,86 @@ FuncStmt * ReadFunc(const char * in, int & index)
 	return new FuncStmt(name, val);
 }
 
-Statement * Parser(const char * in, int & index)
+void LogicTree::ReleaseAll(Statement * pS)
+{
+	for (auto stmt : pS->childs)
+		ReleaseAll(stmt);
+
+	delete pS;
+}
+
+Statement * LogicTree::ReduceImp(Statement * in)
+{
+	std::vector<Statement *> & rvS = in->childs;
+
+	for (unsigned int i = 0; i < rvS.size(); i++)
+		rvS[i] = ReduceImp(rvS[i]);
+	
+	if (in->sType == Statement::StatementType::IMPLICATION)
+	{
+		Statement * sTemp = new OrStmt(new NotStmt(rvS[0]), rvS[1]);
+		delete in;
+		return sTemp;
+	}
+	else
+		return in;
+}
+
+Statement * LogicTree::DistributeNot(Statement * in, bool isN)
+{
+	if (in->sType == Statement::StatementType::NOT)
+		return DistributeNot(in->childs[0], !isN);
+
+	if (in->sType == Statement::StatementType::FUNC && isN)
+		return new NotStmt(in);
+
+	std::vector<Statement *> & rvS = in->childs;
+
+	for (unsigned int i = 0; i < rvS.size(); i++)
+		rvS[i] = DistributeNot(rvS[i], isN);
+
+	Statement * sTemp;
+	if (!isN)
+		return in;
+	if (in->sType == Statement::StatementType::AND)
+		sTemp = new OrStmt(rvS[0], rvS[1]);
+	else
+		sTemp = new AndStmt(rvS[0], rvS[1]);
+	
+	delete in;
+	return sTemp;
+}
+
+Statement * LogicTree::CompressTree(Statement * in)
+{
+	if (in->sType == Statement::StatementType::FUNC || in->sType == Statement::StatementType::NOT)
+		return in;
+
+	Statement::StatementType nType = (in->sType > Statement::StatementType::NOT) ? in->sType :
+		((in->sType == Statement::StatementType::OR) ? Statement::StatementType::OR_MUL : Statement::StatementType::AND_MUL);
+	std::vector<Statement *> val;
+	for (auto stmt : in->childs)
+	{
+		Statement * sTemp = CompressTree(stmt);
+		
+		if (sTemp->sType == nType)
+		{
+			val.insert(val.end(), sTemp->childs.begin(), sTemp->childs.end());
+			delete sTemp;
+		}
+		else
+			val.push_back(sTemp);
+	}
+
+	delete in;
+
+	if (nType == Statement::StatementType::OR_MUL)
+		return new OrMulStmt(val);
+	else
+		return new AndMulStmt(val);
+}
+
+Statement * LogicTree::Parser(const char * in, int & index)
 {
 	enum ParserPhase
 	{
@@ -159,12 +199,15 @@ Statement * Parser(const char * in, int & index)
 			if (isNeg)
 				resN = new NotStmt(resN);
 
+			isNeg = false;
+
 			break;
 		case IMP_REST:
 			if (!resI)
 				resI = resO;
 			else
-				((ImpStmt *)resI)->right = resO;
+				resI->AddChild(resO);
+				//((ImpStmt *)resI)->right = resO;
 
 			if (cTemp != '=')
 			{
@@ -186,7 +229,8 @@ Statement * Parser(const char * in, int & index)
 			if (!resO)
 				resO = resA;
 			else
-				((OrStmt*)resO)->right = resA;
+				//((OrStmt*)resO)->right = resA;
+				resO->AddChild(resA);
 
 			if (cTemp != '|')
 				break;
@@ -203,7 +247,8 @@ Statement * Parser(const char * in, int & index)
 			if (!resA)
 				resA = resN;
 			else
-				((AndStmt *)resA)->right = resN;
+				//((AndStmt *)resA)->right = resN;
+				resA->AddChild(resN);
 			if (cTemp != '&')
 				break;
 
@@ -220,5 +265,3 @@ Statement * Parser(const char * in, int & index)
 
 	return resI;
 }
-
-#undef CONVERT(type, pointer)
