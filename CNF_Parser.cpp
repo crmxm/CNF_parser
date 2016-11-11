@@ -1,6 +1,6 @@
 #include<iostream>
 
-#include"Stmt.h"
+#include"LogicTree.h"
 
 int main()
 {
@@ -25,10 +25,17 @@ int main()
 	pLT->DistributeNot();
 	pLT->Print(std::cout);
 
-	std::cout << "Compress Tree...Done." << std::endl;
+	std::cout << "Distribute Or...Done." << std::endl;
 
-	pLT->CompressTree();
+	pLT->DistributeOr();
 	pLT->Print(std::cout);
+
+	//int x = pLT->EvaluateDisorderCount();
+
+	//std::cout << "Compress Tree...Done." << std::endl;
+
+	//pLT->CompressTree();
+	//pLT->Print(std::cout);
 
 	delete pLT;
 
