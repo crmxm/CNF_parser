@@ -151,27 +151,23 @@ Statement * Parser(const char * in, int & index)
 
 			break;
 		case FUNC:
-			Statement * sTemp;
-
 			if (cTemp == '(')
-				sTemp = Parser(in, ++index);
+				resN = Parser(in, ++index);
 			else
-				sTemp = ReadFunc(in, index);
+				resN = ReadFunc(in, index);
 
 			if (isNeg)
-				resN = new NotStmt(sTemp);
-			else
-				resN = sTemp;
+				resN = new NotStmt(resN);
 
 			break;
 		case IMP_REST:
+			if (!resI)
+				resI = resO;
+			else
+				((ImpStmt *)resI)->right = resO;
+
 			if (cTemp != '=')
 			{
-				if (!resI)
-					resI = resO;
-				else
-					((ImpStmt *)resI)->right = resO;
-
 				if (cTemp == ')')
 					index++;
 
@@ -183,62 +179,40 @@ Statement * Parser(const char * in, int & index)
 			sPhase.push(ParserPhase::IMP_REST);
 			sPhase.push(ParserPhase::OR);
 
-			if (!resI)
-				resI = new ImpStmt(resO);
-			else
-			{
-				((ImpStmt *)resI)->right = resO;
-				resI = new ImpStmt(resI);
-			}
+			resI = new ImpStmt(resI);
 
 			break;
 		case OR_REST:
+			if (!resO)
+				resO = resA;
+			else
+				((OrStmt*)resO)->right = resA;
+
 			if (cTemp != '|')
-			{
-				if (!resO)
-					resO = resA;
-				else
-					((OrStmt *)resO)->right = resA;
 				break;
-			}
 
 			index++;
 
 			sPhase.push(ParserPhase::OR_REST);
 			sPhase.push(ParserPhase::AND);
 
-			if (!resO)
-				resO = new OrStmt(resA);
-			else
-			{
-				((OrStmt *)resO)->right = resA;
-				resO = new OrStmt(resO);
-			}
+			resO = new OrStmt(resO);
 
 			break;
 		case AND_REST:
+			if (!resA)
+				resA = resN;
+			else
+				((AndStmt *)resA)->right = resN;
 			if (cTemp != '&')
-			{
-				if (!resA)
-					resA = resN;
-				else
-					((AndStmt *)resA)->right = resN;
-
 				break;
-			}
 
 			index++;
 
 			sPhase.push(ParserPhase::AND_REST);
 			sPhase.push(ParserPhase::NOT);
 
-			if (!resA)
-				resA = new AndStmt(resN);
-			else
-			{
-				((AndStmt *)resA)->right = resN;
-				resA = new AndStmt(resA);
-			}
+			resA = new AndStmt(resA);
 
 			break;
 		}

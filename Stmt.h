@@ -107,19 +107,22 @@ public:
 	void Print(std::ostream &, int);
 };
 
-class CNF
-{
-private:
-	Statement * stmt;
-
-public:
-	CNF() {};
-};
-
 FuncStmt * ReadFunc(const char *, int &);
 Statement * Parser(const char *, int &);
 Statement * Compress(Statement *);
 Statement * RmImp(Statement *);
 Statement * ReduceNot(Statement *);
+
+class LogicTree
+{
+private:
+	Statement * stmt;
+
+public:
+	LogicTree() : stmt(nullptr) {};
+	LogicTree(const char * in) { int index = 0; stmt = Parser(in, index); };
+
+	void Print(std::ostream & os) { stmt->Print(os, 0); };
+};
 
 #endif // !__STMT_H__
