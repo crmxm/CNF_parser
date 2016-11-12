@@ -4,18 +4,7 @@
 
 #include <iostream>
 
-
-
-void LogicTree::ReleaseAll(Statement * pS)
-{
-	if (pS->first)
-		ReleaseAll(pS->first);
-	if (pS->second)
-		ReleaseAll(pS->second);
-
-	delete pS;
-}
-
+/*
 Statement * LogicTree::ReduceImp(Statement * in)
 {
 	if (in->first)
@@ -59,18 +48,7 @@ Statement * LogicTree::DistributeNot(Statement * in, bool isN)
 	delete in;
 	return sTemp;
 }
-/*
-int LogicTree::EvaluateDisorderCount(Statement * in, int depth)
-{
-	if (in->sType == Statement::StatementType::NOT || in->sType == Statement::StatementType::FUNC)
-		return 0;
 
-	if (in->sType == Statement::StatementType::AND)
-		return EvaluateDisorderCount(in->first, depth) + EvaluateDisorderCount(in->second, depth) + depth;
-	else
-		return EvaluateDisorderCount(in->first, depth + 1) + EvaluateDisorderCount(in->second, depth + 1);
-}
-*/
 Statement * LogicTree::DistributeOrOnePass(Statement * in, bool & b)
 {
 	if (in->sType == Statement::StatementType::NOT || in->sType == Statement::StatementType::FUNC)
@@ -117,35 +95,6 @@ Statement * LogicTree::DistributeOrOnePass(Statement * in, bool & b)
 	b |= (isF | isS);
 
 	return sTemp;
-}
-/*
-Statement * LogicTree::CompressTree(Statement * in)
-{
-	if (in->sType == Statement::StatementType::FUNC || in->sType == Statement::StatementType::NOT)
-		return in;
-
-	Statement::StatementType nType = (in->sType > Statement::StatementType::NOT) ? in->sType :
-		((in->sType == Statement::StatementType::OR) ? Statement::StatementType::OR_MUL : Statement::StatementType::AND_MUL);
-	std::vector<Statement *> val;
-	for (auto stmt : in->childs)
-	{
-		Statement * sTemp = CompressTree(stmt);
-
-		if (sTemp->sType == nType)
-		{
-			val.insert(val.end(), sTemp->childs.begin(), sTemp->childs.end());
-			delete sTemp;
-		}
-		else
-			val.push_back(sTemp);
-	}
-
-	delete in;
-
-	if (nType == Statement::StatementType::OR_MUL)
-		return new OrMulStmt(val);
-	else
-		return new AndMulStmt(val);
 }
 */
 FuncStmt * ReadFunc(const char * in, int & index)
@@ -314,14 +263,16 @@ Statement * LogicTree::Parser(const char * in, int & index)
 
 void LogicTree::DistributeOr()
 {
-	bool b = false;
-	do
+	bool b = true;
+	while (b)
 	{
 		b = false;
-		stmt = DistributeOrOnePass(stmt, b);
+		//stmt = DistributeOrOnePass(stmt, b);
+		Statement * temp = stmt;
+		if (temp != (stmt = stmt->DistributeOrOnePass(b)))
+			delete temp;
 		//std::cout << "Distribute Or One Pass" << std::endl;
 		//Print(std::cout);
 	}
-	while (b);
 
 }

@@ -9,12 +9,9 @@ private:
 	Statement * stmt;
 
 	Statement * Parser(const char *, int &);
-	void ReleaseAll(Statement *);
-	Statement * ReduceImp(Statement *);
-	Statement * DistributeNot(Statement *, bool);
-	//int EvaluateDisorderCount(Statement *, int);
-	Statement * DistributeOrOnePass(Statement *, bool &);
-	//Statement * CompressTree(Statement *);
+	//Statement * ReduceImp(Statement *);
+	//Statement * DistributeNot(Statement *, bool);
+	//Statement * DistributeOrOnePass(Statement *, bool &);
 
 public:
 	LogicTree() : stmt(nullptr) {};
@@ -24,11 +21,11 @@ public:
 	~LogicTree() { ReleaseAll(stmt); };
 
 	void Print(std::ostream & os) { stmt->Print(os, 0); };
-	void ReduceImp() { stmt = ReduceImp(stmt); };
-	void DistributeNot() { stmt = DistributeNot(stmt, false); };
-	//int EvaluateDisorderCount() { return EvaluateDisorderCount(stmt, 0); };
+	//void ReduceImp() { stmt = ReduceImp(stmt); };
+	void ReduceImp() { Statement * temp = stmt; if (temp != (stmt = stmt->ReduceImp())) delete temp; };
+	//void DistributeNot() { stmt = DistributeNot(stmt, false); };
+	void DistributeNot() { Statement * temp = stmt; if (temp != (stmt = stmt->DistributeNot(false))) delete temp; };
 	void DistributeOr();
-	//void CompressTree() { stmt = CompressTree(stmt); };
 };
 
 #endif
