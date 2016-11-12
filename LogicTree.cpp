@@ -148,6 +148,9 @@ Statement * LogicTree::Parser(const char * in, int & index)
 	while (!sPhase.empty())
 	{
 		char cTemp = in[index];
+		if (cTemp == ' ')
+			continue;
+
 		ParserPhase currPhase = sPhase.top();
 		sPhase.pop();
 
