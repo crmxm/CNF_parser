@@ -25,14 +25,12 @@ public:
 	Statement * first;
 	Statement * second;
 
-	//std::vector<Statement *> childs;
-
 	Statement(StatementType s) : sType(s), first(nullptr), second(nullptr) {};
 	Statement(StatementType s, Statement * f, Statement * sec = nullptr) : sType(s), first(f), second(sec) {};
 	virtual ~Statement() {};
 
 	virtual void Print(std::ostream &, int) const; //For all except Func
-	virtual Statement * DeepCopy() = 0;
+	virtual Statement * DeepCopy() const = 0;
 	virtual Statement * ReduceImp(); //For all except Imp
 	virtual Statement * DistributeNot(bool); //For And/Or
 	virtual Statement * DistributeOrOnePass(bool &);
@@ -48,7 +46,7 @@ public:
 	FuncStmt(std::string name, std::vector<std::string> val) : Statement(StatementType::FUNC), funcName(name), args(val) {};
 
 	void Print(std::ostream &, int) const;
-	Statement * DeepCopy();
+	Statement * DeepCopy() const;
 	Statement * DistributeNot(bool);
 	Statement * DistributeOrOnePass(bool &) { return this; };
 };
@@ -59,7 +57,7 @@ public:
 	ImpStmt() : Statement(StatementType::IMPLICATION) {};
 	ImpStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::IMPLICATION, l, r) {};
 
-	Statement * DeepCopy();
+	Statement * DeepCopy() const;
 	Statement * ReduceImp();
 	Statement * DistributeNot(bool) { std::cerr << "ReduceImp before DistributeNot!" << std::endl; return this; };
 	Statement * DistributeOrOnePass(bool &) { std::cerr << "ReduceImp before DistributeOrOnePass!" << std::endl; return this; };
@@ -71,7 +69,7 @@ public:
 	OrStmt() : Statement(StatementType::OR) {};
 	OrStmt(Statement * l, Statement * r = nullptr) : Statement(Statement::OR, l, r) {};
 
-	Statement * DeepCopy();
+	Statement * DeepCopy() const;
 	virtual Statement * DistributeOrOnePass(bool &);
 };
 
@@ -81,7 +79,7 @@ public:
 	AndStmt() : Statement(StatementType::AND) {};
 	AndStmt(Statement * l, Statement * r = nullptr) : Statement(StatementType::AND, l, r) {};
 
-	Statement * DeepCopy();
+	Statement * DeepCopy() const;
 	virtual Statement * DistributeOrOnePass(bool &);
 };
 
@@ -91,7 +89,7 @@ public:
 	NotStmt() : Statement(StatementType::NOT) {};
 	NotStmt(Statement * n) : Statement(StatementType::NOT, n) {};
 
-	Statement * DeepCopy();
+	Statement * DeepCopy() const;
 	Statement * DistributeNot(bool isN);
 	Statement * DistributeOrOnePass(bool &) { return this; };
 };

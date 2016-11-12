@@ -70,7 +70,7 @@ void FuncStmt::Print(std::ostream & os, int depth) const
 	os << ')' << std::endl;
 }
 
-Statement * FuncStmt::DeepCopy()
+Statement * FuncStmt::DeepCopy() const
 {
 	return new FuncStmt(funcName, args);
 }
@@ -80,7 +80,7 @@ Statement * FuncStmt::DistributeNot(bool isN)
 	return (isN) ? new NotStmt(new FuncStmt(*this)) : (Statement *) this;
 }
 
-Statement * ImpStmt::DeepCopy()
+Statement * ImpStmt::DeepCopy() const
 {
 	return new ImpStmt(first->DeepCopy(), second->DeepCopy());
 }
@@ -90,7 +90,7 @@ Statement * ImpStmt::ReduceImp()
 	return new OrStmt(new NotStmt(first->ReduceImp()), second->ReduceImp());
 }
 
-Statement * OrStmt::DeepCopy()
+Statement * OrStmt::DeepCopy() const 
 {
 	return new OrStmt(first->DeepCopy(), second->DeepCopy());
 }
@@ -130,7 +130,7 @@ Statement * OrStmt::DistributeOrOnePass(bool & hasChange)
 	return sTemp;
 }
 
-Statement * AndStmt::DeepCopy()
+Statement * AndStmt::DeepCopy() const
 {
 	return new AndStmt(first->DeepCopy(), second->DeepCopy());
 }
@@ -140,7 +140,7 @@ Statement * AndStmt::DistributeOrOnePass(bool & hasChange)
 	return Statement::DistributeOrOnePass(hasChange);
 }
 
-Statement * NotStmt::DeepCopy()
+Statement * NotStmt::DeepCopy() const
 {
 	return new NotStmt(first->DeepCopy());
 }
